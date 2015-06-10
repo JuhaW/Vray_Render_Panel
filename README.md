@@ -1,3 +1,3 @@
 # Vray-Render-Settings
 
-![My image](TynkaTopi.github.com/repository/img/image.jpg)
+https://cloud.githubusercontent.com/assets/4781236/8078869/5730d296-0f69-11e5-9127-28616e687f1a.png
