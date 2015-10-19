@@ -19,7 +19,7 @@ def nodes_iterate(mat):
 	#return image/None
 
 	nodeoutput = outputnode_search(mat)
-	print ("Material: ",mat)
+	#print ("Material: ",mat)
 
 	nodelist = []
 	nodelist.append(nodeoutput)
@@ -54,7 +54,7 @@ def nodes_iterate(mat):
 ###############################################################
 
 def create_textures(shadeless):
-	print ("##################################")
+	#print ("##################################")
 
 	for mat in bpy.data.materials:
 
@@ -66,21 +66,17 @@ def create_textures(shadeless):
 		#create image texture
 		#print ("image:",image)
 		if image:
-			print ("image is not none")
-			print (mat.name)
+			#print ("image is not none")
+			#print (mat.name)
 			#create image texture if needed
 			
 			if mat.name in bpy.data.textures:
-				print ("IF")
 				tex = bpy.data.textures[mat.name]
-
 			else:
-				print ("ELSE")
 				tex = bpy.data.textures.new(mat.name,'IMAGE')
 
-
 			tex.image = image
-			mat.texture_slots.add()
+			#mat.texture_slots.add()
 			mat.texture_slots[0].texture  = tex
 			mat.texture_slots[0].texture.type  = 'IMAGE'
 			mat.texture_slots[0].texture_coords = 'UV'

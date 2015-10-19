@@ -221,8 +221,8 @@ def exposure(self, context):
 
 		ape1 = round(log(round(pow(CameraPhysical.f_number, 2), 2), 2), 1)
 		ape2 = round(log(round(pow(scene.f_number,2),2),2),1)
-		print ("ape1",ape1)
-		print ("ape2",ape2)
+		#print ("ape1",ape1)
+		#print ("ape2",ape2)
 		CameraPhysical.shutter_speed = round(shutter * (pow(2,ape1 - ape2)))
 
 	CameraPhysical.f_number = round(scene.f_number,2)
