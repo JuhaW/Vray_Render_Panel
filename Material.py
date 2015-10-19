@@ -67,17 +67,24 @@ def create_textures(shadeless):
 		#print ("image:",image)
 		if image:
 			print ("image is not none")
-			
+			print (mat.name)
 			#create image texture if needed
 			
 			if mat.name in bpy.data.textures:
+				print ("IF")
 				tex = bpy.data.textures[mat.name]
+
 			else:
+				print ("ELSE")
 				tex = bpy.data.textures.new(mat.name,'IMAGE')
-			#mat.texture_slots.add()
+
+
+			tex.image = image
+			mat.texture_slots.add()
 			mat.texture_slots[0].texture  = tex
+			mat.texture_slots[0].texture.type  = 'IMAGE'
 			mat.texture_slots[0].texture_coords = 'UV'
-			mat.texture_slots[0].texture.image = image
+			#mat.texture_slots[0].texture.image = image
 
 ###############################################################		
 #nodes types with image
