@@ -10,6 +10,13 @@ bl_info = {
 	"category": "",
 }
 
+
+if "bpy" in locals():
+	import imp
+	imp.reload(__init__)
+else:
+	from .  import __init__
+
 import bpy
 from math import log
 from bpy.props import *

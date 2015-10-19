@@ -76,11 +76,16 @@ def create_textures(shadeless):
 				tex = bpy.data.textures.new(mat.name,'IMAGE')
 
 			tex.image = image
+			tex.type = 'IMAGE'
 			#mat.texture_slots.add()
-			mat.texture_slots[0].texture  = tex
-			mat.texture_slots[0].texture.type  = 'IMAGE'
-			mat.texture_slots[0].texture_coords = 'UV'
+			#mat.texture_slots[0].texture  = tex
+			#mat.texture_slots[0].texture.type  = 'IMAGE'
+			#mat.texture_slots[0].texture_coords = 'UV'
 			#mat.texture_slots[0].texture.image = image
+			#mat.add_texture(texture = tex, texture_coordinates = 'UV')
+			mat.texture_slots.clear(0)
+			mat.texture_slots.add()
+			mat.texture_slots[0].texture = tex
 
 ###############################################################		
 #nodes types with image
