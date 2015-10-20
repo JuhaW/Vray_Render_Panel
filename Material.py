@@ -30,12 +30,14 @@ def nodes_iterate(mat):
 		basenode = nodelist[nodecounter]
 
 		if basenode.vray_plugin in ('TexBitmap','BitmapBuffer'):
-			#print ("Mat:",mat.name, "has bitmap texture")
-			try:
-				image = bpy.data.node_groups[mat.name].nodes[basenode.name].texture.image
-				return image
-			except AttributeError:
-				pass
+			print ("Mat:",mat.name, "has bitmap texture")
+			print ("basenode.name", basenode.name)
+
+			if hasattr(basenode, 'texture'):
+				if hasattr(basenode.texture, 'image'):
+					image = basenode.texture.image
+					print ("image=", image)
+					return image
 
 		inputlist = (i for i in basenode.inputs if i.is_linked)
 
