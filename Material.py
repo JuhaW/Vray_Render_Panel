@@ -31,7 +31,7 @@ def nodes_iterate(mat):
 
 		if basenode.vray_plugin in ('TexBitmap','BitmapBuffer'):
 			print ("Mat:",mat.name, "has bitmap texture")
-			print ("basenode.name", basenode.name)
+			print ("basenode.name"  , basenode.name)
 
 			if hasattr(basenode, 'texture'):
 				if hasattr(basenode.texture, 'image'):
@@ -64,7 +64,7 @@ def create_textures(shadeless):
 
 		mat.use_shadeless = shadeless
 		mat.use_nodes = False
-		
+
 		#create image texture
 		#print ("image:",image)
 		if image:
@@ -88,6 +88,7 @@ def create_textures(shadeless):
 			mat.texture_slots.clear(0)
 			mat.texture_slots.add()
 			mat.texture_slots[0].texture = tex
+			mat.texture_slots[0].use_map_alpha = True
 
 ###############################################################		
 #nodes types with image
