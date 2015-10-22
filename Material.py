@@ -161,7 +161,7 @@ def proxy_save_materials():
 		#print (mat.name)
 		#print ("nodename:", nodename)
 		#mat.vray.ntree.name = proxyname + "_ProxyMat_" + mat.name + "_slot_" + str(i)
-		mat.vray.ntree.name = "Slot_" + str(i)
+		mat.vray.ntree.name = proxyname + "_Slot_" + str(i)
 		#print ("new nodename:",mat.vray.ntree.name)
 		
 		filenames.append(os.path.join(outputDirpath, mat.vray.ntree.name + '.vrscene'))
