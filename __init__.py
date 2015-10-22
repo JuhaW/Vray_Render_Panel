@@ -2,7 +2,7 @@ bl_info = {
 	"name": "Vray Render Panel",
 	"author": "JuhaW",
 	"version": (0, 1, 0),
-	"blender": (2, 74, 0),
+	"blender": (2, 76, 0),
 	"location": "Tools",
 	"description": "Quick Render Settings",
 	"warning": "beta",
@@ -269,6 +269,9 @@ def register():
 	bpy.types.Scene.Material = bpy.props.BoolProperty(default=True)
 	bpy.types.Scene.Material_shadeless = bpy.props.BoolProperty(default=True)
 	bpy.utils.register_class(Viewport)
+	bpy.utils.register_class(ProxyMaterialList)
+	bpy.types.VRAY_DP_tools.append(Vray_tools_panel)
+
 
 def unregister():
 	bpy.utils.unregister_class(HelloWorldPanel)
@@ -284,6 +287,8 @@ def unregister():
 	del bpy.types.Scene.Material
 	del bpy.types.Scene.Material_shadeless
 	bpy.utils.unregister_class(Viewport)
-
+	bpy.utils.unregister_class(ProxyMaterialList)
+	bpy.types.VRAY_DP_tools.remove(Vray_tools_panel)
+	
 if __name__ == "__main__":
 	register()

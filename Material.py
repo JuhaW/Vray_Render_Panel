@@ -96,3 +96,98 @@ def create_textures(shadeless):
 
 #output node
 #bpy.data.materials[0].vray.ntree.nodes[1].bl_idname,'VRayNodeOutputMaterial'
+###############################################################		
+#Proxy material save
+###############################################################		
+import bpy, os
+from vb30.ui import classes
+from vb30.lib import BlenderUtils, PathUtils
+
+
+class ProxyMaterialList(bpy.types.Operator):
+	bl_idname = "proxy.material_list"
+	bl_label = "Save proxy materials"
+	
+	def execute(self, context):
+		o = bpy.context.object
+		GeomMeshFile = o.data.vray.GeomMeshFile
+
+		# Create output path
+		outputDirpath = BlenderUtils.GetFullFilepath(GeomMeshFile.dirpath)
+		outputDirpath = PathUtils.CreateDirectory(outputDirpath)
+		name = o.data.vray.GeomMeshFile.filename
+
+		outputfile = os.path.join(outputDirpath, name + '.txt')
+		ret = '\n'
+		blendpath = bpy.path.abspath(path= '//') + bpy.path.basename(bpy.context.blend_data.filepath)
+		with open(outputfile, 'w') as w_file:
+			  
+			w_file.write(blendpath + ret + ret) 
+			for mat in o.data.materials:
+				w_file.write(mat.name + ret)
+
+		print ("Vray Proxy materials saved:", outputfile)
+		proxy_save_materials()
+		
+		return {'FINISHED'}	
+def Vray_tools_panel(self, context):
+	
+	layout = self.layout
+	layout.operator("proxy.material_list")
+
+def proxy_save_materials():
+	
+	#scene > node tools > path same than proxy export path
+	GeomMeshFile = bpy.context.object.data.vray.GeomMeshFile
+	outputDirpath = BlenderUtils.GetFullFilepath(GeomMeshFile.dirpath)
+	bpy.context.scene.vray.Exporter.ntreeExportDirectory = PathUtils.CreateDirectory(outputDirpath)
+
+	o = bpy.context.object
+
+	nodenames = []
+	proxyname = o.data.vray.GeomMeshFile.filename
+	
+	#change node names
+	for i, mat in enumerate(o.data.materials):
+
+		nodename = mat.vray.ntree.name 
+		nodenames.append(nodename)
+		#print (i)
+		#print (mat.name)
+		#print ("nodename:", nodename)
+		mat.vray.ntree.name = proxyname + "_ProxyMat_" + mat.name + "_slot_" + str(i)
+		#print ("new nodename:",mat.vray.ntree.name)
+	
+	#save nodes		   
+	print ("Saving...")
+	for mat in o.data.materials:
+		
+		nodename = mat.vray.ntree.name 
+		print ("nodename:",nodename)
+		i = bpy.data.node_groups.find(nodename)
+		bpy.context.scene.vray.Exporter.ntreeListIndex = i
+		bpy.ops.vray.export_nodetree()
+		
+	#change node names back to original
+	for i, mat in enumerate(o.data.materials):
+		mat.vray.ntree.name = nodenames[i]
+			
+	
+# Registration
+
+
+ 
+if __name__ == "__main__":
+	register()
+
+
+
+
+
+
+
+
+	
+
+
+
