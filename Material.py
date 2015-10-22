@@ -31,7 +31,7 @@ def nodes_iterate(mat):
 
 		if basenode.vray_plugin in ('TexBitmap','BitmapBuffer'):
 			print ("Mat:",mat.name, "has bitmap texture")
-			print ("basenode.name"  , basenode.name)
+			print ("basenode.name"	, basenode.name)
 
 			if hasattr(basenode, 'texture'):
 				if hasattr(basenode.texture, 'image'):
@@ -81,7 +81,7 @@ def create_textures(shadeless):
 			tex.type = 'IMAGE'
 			#mat.texture_slots.add()
 			#mat.texture_slots[0].texture  = tex
-			#mat.texture_slots[0].texture.type  = 'IMAGE'
+			#mat.texture_slots[0].texture.type	= 'IMAGE'
 			#mat.texture_slots[0].texture_coords = 'UV'
 			#mat.texture_slots[0].texture.image = image
 			#mat.add_texture(texture = tex, texture_coordinates = 'UV')
@@ -115,7 +115,7 @@ class ProxyMaterialList(bpy.types.Operator):
 		# Create output path
 		outputDirpath = BlenderUtils.GetFullFilepath(GeomMeshFile.dirpath)
 		outputDirpath = PathUtils.CreateDirectory(outputDirpath)
-		name = o.data.vray.GeomMeshFile.filename
+		name = GeomMeshFile.filename
 
 		outputfile = os.path.join(outputDirpath, name + '.txt')
 		ret = '\n'
@@ -142,8 +142,13 @@ def proxy_save_materials():
 	outputDirpath = BlenderUtils.GetFullFilepath(GeomMeshFile.dirpath)
 	bpy.context.scene.vray.Exporter.ntreeExportDirectory = PathUtils.CreateDirectory(outputDirpath)
 
+	print ()
+	print ("outputDirpath:",outputDirpath)
+	print ()
+	
 	o = bpy.context.object
-
+	
+	filenames = []
 	nodenames = []
 	proxyname = o.data.vray.GeomMeshFile.filename
 	
@@ -155,9 +160,12 @@ def proxy_save_materials():
 		#print (i)
 		#print (mat.name)
 		#print ("nodename:", nodename)
-		mat.vray.ntree.name = proxyname + "_ProxyMat_" + mat.name + "_slot_" + str(i)
+		#mat.vray.ntree.name = proxyname + "_ProxyMat_" + mat.name + "_slot_" + str(i)
+		mat.vray.ntree.name = "Slot_" + str(i)
 		#print ("new nodename:",mat.vray.ntree.name)
-	
+		
+		filenames.append(os.path.join(outputDirpath, mat.vray.ntree.name + '.vrscene'))
+		
 	#save nodes		   
 	print ("Saving...")
 	for mat in o.data.materials:
@@ -171,8 +179,29 @@ def proxy_save_materials():
 	#change node names back to original
 	for i, mat in enumerate(o.data.materials):
 		mat.vray.ntree.name = nodenames[i]
-			
+
+	#print filenames
 	
+	for name in filenames:
+		print ("Filename:", name)
+	
+	proxy_files_join(outputDirpath, filenames, proxyname)
+	
+def proxy_files_join(outputDirpath, filenames, proxyname):
+	
+	print()
+	print ("proxy files join")
+	print()
+	print ("outputdirpath:", outputDirpath)
+	print ("filenames:",filenames)
+	
+	filename = os.path.join(outputDirpath, proxyname + "_ProxyMaterials.vrscene")
+	
+	with open(filename, 'w') as outfile:
+		for fname in filenames:
+			with open(fname) as infile:
+				for line in infile:
+					outfile.write(line)
 # Registration
 
 
