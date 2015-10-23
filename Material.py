@@ -112,6 +112,7 @@ def create_textures(shadeless):
 
 
 class ProxyMaterialList(bpy.types.Operator):
+	# '''Save all materials of selected object to .vrscene file'''
 	bl_idname = "proxy.material_list"
 	bl_label = "Save proxy materials"
 	
@@ -139,8 +140,10 @@ class ProxyMaterialList(bpy.types.Operator):
 		return {'FINISHED'}
 		
 class ProxyMaterialLoad(bpy.types.Operator):
+	'''Load materials from .vrscene file and add them to the selected object'''
 	bl_idname = "proxy.load_materials"
 	bl_label = "Load proxy materials"
+	
 	
 	filepath = StringProperty(name="File Path", description="Filepath for .vrscene", maxlen= 1024, default= "")
 	files = CollectionProperty(
@@ -151,7 +154,7 @@ class ProxyMaterialLoad(bpy.types.Operator):
 	def execute(self, context):
 	
 		print (self.files[0].name)
-		filepath =  self.properties.filepath
+		filepath =	self.properties.filepath
 		
 		#1
 		matnames = store_materials()
