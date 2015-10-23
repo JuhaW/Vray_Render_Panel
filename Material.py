@@ -1,4 +1,13 @@
-import bpy
+import bpy, os
+from vb30.ui import classes
+from vb30.lib import BlenderUtils, PathUtils
+from vb30.nodes import importing as NodesImport
+import re
+import vb30
+from bpy.props import *
+
+global SLOT
+SLOT = "_Slot_"
 
 ###############################################################
 
@@ -99,9 +108,7 @@ def create_textures(shadeless):
 ###############################################################		
 #Proxy material save
 ###############################################################		
-import bpy, os
-from vb30.ui import classes
-from vb30.lib import BlenderUtils, PathUtils
+
 
 
 class ProxyMaterialList(bpy.types.Operator):
@@ -129,12 +136,55 @@ class ProxyMaterialList(bpy.types.Operator):
 		print ("Vray Proxy materials saved:", outputfile)
 		proxy_save_materials()
 		
+		return {'FINISHED'}
+		
+class ProxyMaterialLoad(bpy.types.Operator):
+	bl_idname = "proxy.load_materials"
+	bl_label = "Load proxy materials"
+	
+	filepath = StringProperty(name="File Path", description="Filepath for .vrscene", maxlen= 1024, default= "")
+	files = CollectionProperty(
+		name="File Path",
+		type=bpy.types.OperatorFileListElement,
+		)	 
+		
+	def execute(self, context):
+	
+		print (self.files[0].name)
+		filepath =  self.properties.filepath
+		
+		#1
+		matnames = store_materials()
+
+		#2
+		import_materials(filepath)
+
+		#3
+		matdifference = material_difference(matnames)
+
+		#4
+		materiallist = sort_materials(matdifference)
+
+		#5	
+		materials_add (materiallist)
+
+		
 		return {'FINISHED'}	
+		
+	def invoke(self, context, event):
+		context.window_manager.fileselect_add(self)
+		
+		return {'RUNNING_MODAL'}
+	
+		
 def Vray_tools_panel(self, context):
 	
 	layout = self.layout
 	layout.operator("proxy.material_list")
+	layout.operator("proxy.load_materials", icon = 'FILESEL')
+	#layout.prop(context.scene, 'proxy_load_path')
 
+	
 def proxy_save_materials():
 	
 	#scene > node tools > path same than proxy export path
@@ -188,7 +238,7 @@ def proxy_save_materials():
 	proxy_files_join(outputDirpath, filenames, proxyname)
 	
 def proxy_files_join(outputDirpath, filenames, proxyname):
-	
+		
 	print()
 	print ("proxy files join")
 	print()
@@ -202,8 +252,71 @@ def proxy_files_join(outputDirpath, filenames, proxyname):
 			with open(fname) as infile:
 				for line in infile:
 					outfile.write(line)
-# Registration
 
+###############################################################		
+#Proxy material load
+###############################################################					
+					
+def import_materials(filepath):
+	
+	#filepath = "C:\Blender\Harjoituksia\Vray\proxy\Material_ProxyMaterials.vrscene"
+	a = vb30.nodes.operators.import_file.ImportMaterials(bpy.context, filepath, 'STANDARD')
+
+def print_materials():
+
+	for mat in bpy.data.materials:
+		print ("material:",mat.name)
+
+def store_materials():
+	matnames = []
+	for mat in bpy.data.materials:
+		matnames.append(mat.name)
+
+	return matnames
+
+def material_difference(matnames):
+	matnames2 = []
+	
+	for mat in bpy.data.materials:
+		matnames2.append(mat.name)
+		
+	matnames2 = set(matnames2)
+	matnames3 = [x for x in matnames2 if x not in matnames]
+	
+	#print ("matnames:",matnames)
+	#print ("matnames2:",matnames2)
+	#print ("matnames3:", matnames3)
+	
+	return matnames3
+	
+def sort_materials(matnames):
+	
+	slotnumbers = []
+	for mat in matnames:
+		slotnumber = mat.split(SLOT)[1]
+		slotnumber =  re.findall("\d+", slotnumber)[0]
+		slotnumbers.append(int(slotnumber))
+		#print ("Mat slotnumber : ", mat, slotnumber)
+		
+	materiallist = zip(slotnumbers,matnames)
+	materiallist = list(materiallist)
+	materiallist.sort()
+	
+	return materiallist
+
+def materials_add(materialnames):	
+
+	#clear object materials
+	o = bpy.context.object
+	omat = o.data.materials
+	omat.clear()
+	
+	for i, mat in enumerate(materialnames):
+		omat.append(bpy.data.materials[mat[1]])
+
+					
+					
+# Registration
 
  
 if __name__ == "__main__":

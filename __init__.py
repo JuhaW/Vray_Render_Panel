@@ -270,7 +270,15 @@ def register():
 	bpy.types.Scene.Material_shadeless = bpy.props.BoolProperty(default=True)
 	bpy.utils.register_class(Viewport)
 	bpy.utils.register_class(ProxyMaterialList)
+	bpy.utils.register_class(ProxyMaterialLoad)
+	
 	bpy.types.VRAY_DP_tools.append(Vray_tools_panel)
+	bpy.types.Scene.proxy_load_path = bpy.props.StringProperty \
+      (
+      name = "Root Path",
+      default = "",
+      description = "Proxy file path",
+      subtype = 'FILE_PATH')
 
 
 def unregister():
@@ -288,7 +296,9 @@ def unregister():
 	del bpy.types.Scene.Material_shadeless
 	bpy.utils.unregister_class(Viewport)
 	bpy.utils.unregister_class(ProxyMaterialList)
+	bpy.utils.unregister_class(ProxyMaterialLoad)
 	bpy.types.VRAY_DP_tools.remove(Vray_tools_panel)
+	del bpy.types.Scene.proxy_load_path
 	
 if __name__ == "__main__":
 	register()
