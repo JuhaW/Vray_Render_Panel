@@ -112,7 +112,7 @@ def create_textures(shadeless):
 
 
 class ProxyMaterialList(bpy.types.Operator):
-	# '''Save all materials of selected object to .vrscene file'''
+	'''Save all materials of selected object to .vrscene file'''
 	bl_idname = "proxy.material_list"
 	bl_label = "Save proxy materials"
 	
@@ -144,12 +144,9 @@ class ProxyMaterialLoad(bpy.types.Operator):
 	bl_idname = "proxy.load_materials"
 	bl_label = "Load proxy materials"
 	
-	
+	filter_glob = StringProperty(default="*.vrscene", options={'HIDDEN'},)
 	filepath = StringProperty(name="File Path", description="Filepath for .vrscene", maxlen= 1024, default= "")
-	files = CollectionProperty(
-		name="File Path",
-		type=bpy.types.OperatorFileListElement,
-		)	 
+	files = CollectionProperty(name="File Path", type=bpy.types.OperatorFileListElement,)	 
 		
 	def execute(self, context):
 	
@@ -214,7 +211,7 @@ def proxy_save_materials():
 		#print (mat.name)
 		#print ("nodename:", nodename)
 		#mat.vray.ntree.name = proxyname + "_ProxyMat_" + mat.name + "_slot_" + str(i)
-		mat.vray.ntree.name = proxyname + "_Slot_" + str(i)
+		mat.vray.ntree.name = proxyname + SLOT + str(i)
 		#print ("new nodename:",mat.vray.ntree.name)
 		
 		filenames.append(os.path.join(outputDirpath, mat.vray.ntree.name + '.vrscene'))
