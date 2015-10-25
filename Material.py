@@ -1,18 +1,93 @@
 import bpy, os
 from vb30.ui import classes
-from vb30.lib import BlenderUtils, PathUtils
+from vb30.lib import BlenderUtils, PathUtils, LibUtils
 from vb30.nodes import importing as NodesImport
 import re
 import vb30
 from bpy.props import *
+import bpy
+
+from bpy.props import StringProperty, IntProperty
+
 
 global SLOT
-SLOT = "_Slot_"
+SLOT = "_ORIGINAL_"
 
+
+###############################################################		
+#Proxy material save
+###############################################################		
+class ProxyMaterialSave(bpy.types.Operator):
+	'''Save all materials of selected object to .vrscene file'''
+	bl_idname = "proxy.material_save"
+	bl_label = "Save proxy materials"
+	
+	def execute(self, context):
+		o = bpy.context.object
+		GeomMeshFile = o.data.vray.GeomMeshFile
+
+		# Create output path
+		outputDirpath = BlenderUtils.GetFullFilepath(GeomMeshFile.dirpath)
+		outputDirpath = PathUtils.CreateDirectory(outputDirpath)
+		name = GeomMeshFile.filename
+
+		outputfile = os.path.join(outputDirpath, name + '.txt')
+		ret = '\n'
+		blendpath = bpy.path.abspath(path= '//') + bpy.path.basename(bpy.context.blend_data.filepath)
+		with open(outputfile, 'w') as w_file:
+			  
+			w_file.write(blendpath + ret + ret) 
+			for mat in o.data.materials:
+				w_file.write(mat.name + ret)
+		w_file.close()
+		
+		print ("Vray Proxy materials saved:", outputfile)
+		proxy_save_materials()
+		
+		return {'FINISHED'}
+###############################################################		
+#Proxy material load
+###############################################################					
+class ProxyMaterialLoad(bpy.types.Operator):
+	'''Load materials from .vrscene file and add them to the selected object'''
+	bl_idname = "proxy.load_materials"
+	bl_label = "Load proxy materials"
+	
+	filter_glob = StringProperty(default="*.vrscene", options={'HIDDEN'},)
+	filepath = StringProperty(name="File Path", description="Filepath for .vrscene", maxlen= 1024, default= "")
+	files = CollectionProperty(name="File Path", type=bpy.types.OperatorFileListElement,)	 
+		
+	def execute(self, context):
+	
+		print (self.files[0].name)
+		filepath =	self.properties.filepath
+		
+		#1
+		matnames = store_materials()
+
+		#2
+		import_materials(filepath)
+
+		#3
+		matdifference = material_difference(matnames)
+
+		#4
+		materiallist = sort_materials(matdifference)
+
+		#5	
+		materials_add (materiallist)
+
+		
+		return {'FINISHED'}	
+		
+	def invoke(self, context, event):
+		context.window_manager.fileselect_add(self)
+		
+		return {'RUNNING_MODAL'}
+	
 ###############################################################
 
-def outputnode_search(mat):
-	#return node index
+def outputnode_search(mat): #return node/None
 	
 	for node in mat.vray.ntree.nodes:
 		#print (i,node)
@@ -23,11 +98,12 @@ def outputnode_search(mat):
 	return None
 			
 ###############################################################
-def nodes_iterate(mat):
-
-	#return image/None
+def nodes_iterate(mat, node_type_search = False): #return image/nodeindex/None
+	#node_type_search = True when searching nodetype for proxy save
 
 	nodeoutput = outputnode_search(mat)
+	if nodeoutput is None:
+		return None
 	#print ("Material: ",mat)
 
 	nodelist = []
@@ -37,8 +113,13 @@ def nodes_iterate(mat):
 	while nodecounter < len(nodelist):
 
 		basenode = nodelist[nodecounter]
-
-		if basenode.vray_plugin in ('TexBitmap','BitmapBuffer'):
+		
+		#search nodetype
+		if node_type_search:
+			if node_type_check(basenode.vray_plugin):
+				return mat.vray.ntree.nodes.find(basenode.name)
+		#search image texture
+		elif basenode.vray_plugin in ('TexBitmap','BitmapBuffer'):
 			print ("Mat:",mat.name, "has bitmap texture")
 			print ("basenode.name"	, basenode.name)
 
@@ -105,86 +186,15 @@ def create_textures(shadeless):
 
 #output node
 #bpy.data.materials[0].vray.ntree.nodes[1].bl_idname,'VRayNodeOutputMaterial'
-###############################################################		
-#Proxy material save
-###############################################################		
 
 
-
-class ProxyMaterialList(bpy.types.Operator):
-	'''Save all materials of selected object to .vrscene file'''
-	bl_idname = "proxy.material_list"
-	bl_label = "Save proxy materials"
-	
-	def execute(self, context):
-		o = bpy.context.object
-		GeomMeshFile = o.data.vray.GeomMeshFile
-
-		# Create output path
-		outputDirpath = BlenderUtils.GetFullFilepath(GeomMeshFile.dirpath)
-		outputDirpath = PathUtils.CreateDirectory(outputDirpath)
-		name = GeomMeshFile.filename
-
-		outputfile = os.path.join(outputDirpath, name + '.txt')
-		ret = '\n'
-		blendpath = bpy.path.abspath(path= '//') + bpy.path.basename(bpy.context.blend_data.filepath)
-		with open(outputfile, 'w') as w_file:
-			  
-			w_file.write(blendpath + ret + ret) 
-			for mat in o.data.materials:
-				w_file.write(mat.name + ret)
-
-		print ("Vray Proxy materials saved:", outputfile)
-		proxy_save_materials()
-		
-		return {'FINISHED'}
-		
-class ProxyMaterialLoad(bpy.types.Operator):
-	'''Load materials from .vrscene file and add them to the selected object'''
-	bl_idname = "proxy.load_materials"
-	bl_label = "Load proxy materials"
-	
-	filter_glob = StringProperty(default="*.vrscene", options={'HIDDEN'},)
-	filepath = StringProperty(name="File Path", description="Filepath for .vrscene", maxlen= 1024, default= "")
-	files = CollectionProperty(name="File Path", type=bpy.types.OperatorFileListElement,)	 
-		
-	def execute(self, context):
-	
-		print (self.files[0].name)
-		filepath =	self.properties.filepath
-		
-		#1
-		matnames = store_materials()
-
-		#2
-		import_materials(filepath)
-
-		#3
-		matdifference = material_difference(matnames)
-
-		#4
-		materiallist = sort_materials(matdifference)
-
-		#5	
-		materials_add (materiallist)
-
-		
-		return {'FINISHED'}	
-		
-	def invoke(self, context, event):
-		context.window_manager.fileselect_add(self)
-		
-		return {'RUNNING_MODAL'}
-	
-		
 def Vray_tools_panel(self, context):
 	
 	layout = self.layout
-	layout.operator("proxy.material_list")
 	layout.operator("proxy.load_materials", icon = 'FILESEL')
-	#layout.prop(context.scene, 'proxy_load_path')
-
+	layout.operator("proxy.material_save")
 	
+		
 def proxy_save_materials():
 	
 	#scene > node tools > path same than proxy export path
@@ -207,25 +217,35 @@ def proxy_save_materials():
 
 		nodename = mat.vray.ntree.name 
 		nodenames.append(nodename)
+		
+		#get Material Output, check node type and change node name for later material slot order
+		nodeindex = nodes_iterate(mat, True)
+		mat.vray.ntree.nodes[nodeindex].name = SLOT + str(i)
+		
 		#print (i)
 		#print (mat.name)
 		#print ("nodename:", nodename)
 		#mat.vray.ntree.name = proxyname + "_ProxyMat_" + mat.name + "_slot_" + str(i)
-		mat.vray.ntree.name = proxyname + SLOT + str(i)
+		
+		#not sure about this
+		#mat.vray.ntree.name = proxyname + SLOT + str(i)
+		
 		#print ("new nodename:",mat.vray.ntree.name)
 		
-		filenames.append(os.path.join(outputDirpath, mat.vray.ntree.name + '.vrscene'))
+		filenames.append(os.path.join(outputDirpath, LibUtils.CleanString(mat.vray.ntree.name) + '.vrscene'))
 		
 	#save nodes		   
 	print ("Saving...")
 	for mat in o.data.materials:
 		
-		nodename = mat.vray.ntree.name 
-		print ("nodename:",nodename)
+		nodename = mat.vray.ntree.name
+		print ("Saving nodename:",nodename)
 		i = bpy.data.node_groups.find(nodename)
 		bpy.context.scene.vray.Exporter.ntreeListIndex = i
 		bpy.ops.vray.export_nodetree()
-		
+	
+	
+	
 	#change node names back to original
 	for i, mat in enumerate(o.data.materials):
 		mat.vray.ntree.name = nodenames[i]
@@ -236,32 +256,47 @@ def proxy_save_materials():
 		print ("Filename:", name)
 	
 	proxy_files_join(outputDirpath, filenames, proxyname)
+
+	print (len(o.data.materials), ": materials saved")  
+	
+def node_type_check(nodetype):
+	
+	MaterialTypeFilter = {
+	'MtlSingleBRDF', 'MtlVRmat', 'MtlDoubleSided', 'MtlGLSL', 'MtlLayeredBRDF', 'MtlDiffuse',
+	'MtlBump', 'Mtl2Sided', 'MtlMulti',
+	'MtlWrapper',
+	'MtlWrapperMaya', 'MayaMtlMatte', 'MtlMaterialID', 'MtlMayaRamp', 'MtlObjBBox',
+	'MtlOverride', 'MtlRenderStats', 'MtlRoundEdges', 'MtlStreakFade'}
+	
+	return nodetype in MaterialTypeFilter
 	
 def proxy_files_join(outputDirpath, filenames, proxyname):
 		
+	
 	print()
 	print ("proxy files join")
 	print()
 	print ("outputdirpath:", outputDirpath)
 	print ("filenames:",filenames)
+	print ("proxyname:",proxyname)
 	
 	filename = os.path.join(outputDirpath, proxyname + "_ProxyMaterials.vrscene")
+	print ("filename is:",filename)
 	
-	with open(filename, 'w') as outfile:
+	with open(filename, 'w+') as outfile:
 		for fname in filenames:
 			with open(fname) as infile:
 				for line in infile:
 					outfile.write(line)
-
-###############################################################		
-#Proxy material load
-###############################################################					
+	outfile.close()
 					
 def import_materials(filepath):
 	
 	#filepath = "C:\Blender\Harjoituksia\Vray\proxy\Material_ProxyMaterials.vrscene"
 	a = vb30.nodes.operators.import_file.ImportMaterials(bpy.context, filepath, 'STANDARD')
-
+	a = vb30.nodes.operators.import_file.ImportMaterials(bpy.context, filepath, 'MULTI')
+	a = vb30.nodes.operators.import_file.ImportMaterials(bpy.context, filepath, 'WRAPPED')
+	
 def print_materials():
 
 	for mat in bpy.data.materials:
@@ -274,7 +309,7 @@ def store_materials():
 
 	return matnames
 
-def material_difference(matnames):
+def material_difference(matnames):#return loaded material names
 	matnames2 = []
 	
 	for mat in bpy.data.materials:
@@ -290,14 +325,29 @@ def material_difference(matnames):
 	return matnames3
 	
 def sort_materials(matnames):
+	print ("sorting materials")
 	
 	slotnumbers = []
+	print ("matnames :", matnames)
+	
+	#material names which are not original materials
+	matnot = [x for x in matnames if SLOT not in x or '@' in x]
+	#delete material because its not original
+	for matname in matnot:
+		m = bpy.data.materials[matname]
+		m.user_clear()
+		bpy.data.materials.remove(m)
+
+	#material names with original materials only
+	matnames = [x for x in matnames if SLOT in x and '@' not in x]
+	
 	for mat in matnames:
+		#node is named as "_original_" material
 		slotnumber = mat.split(SLOT)[1]
 		slotnumber =  re.findall("\d+", slotnumber)[0]
 		slotnumbers.append(int(slotnumber))
-		#print ("Mat slotnumber : ", mat, slotnumber)
-		
+		print ("Mat slotnumber : ", mat, slotnumber)
+
 	materiallist = zip(slotnumbers,matnames)
 	materiallist = list(materiallist)
 	materiallist.sort()
@@ -314,22 +364,19 @@ def materials_add(materialnames):
 	for i, mat in enumerate(materialnames):
 		omat.append(bpy.data.materials[mat[1]])
 
-					
-					
-# Registration
 
- 
-if __name__ == "__main__":
-	register()
-
-
-
-
-
-
-
-
+#get material output with input connection
+#get next node which type is MaterialTypeFilter , MtlSingleBRDF etc.	
+#change node filename to "ORIGINAL_" + material slot index
+def run():
+	o = bpy.context.object
+	mat = o.active_material
 	
+		
+	nodeindex = nodes_iterate(mat, True)
+	mat.vray.ntree.nodes[nodeindex].name = "_ORIGINAL_"
+	print ("nodetype found #", nodeindex, "type is:", bpy.data.node_groups[mat.name], mat.vray.ntree.nodes[nodeindex].vray_plugin)
+	print()			
 
-
-
+#run()
+# Registration

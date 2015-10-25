@@ -10,22 +10,15 @@ bl_info = {
 	"category": "",
 }
 
-
 if "bpy" in locals():
 	import imp
-	imp.reload(__init__)
-else:
-	from .  import __init__
+	if "Material" in locals():
+		imp.reload(Material)
 
 import bpy
 from math import log
 from bpy.props import *
-from . Material import *
-
-
-
-#bpy.types.Scene.testprop = bpy.props.FloatProperty(update=update_func)
-#bpy.context.scene.testprop = 11.0
+from . import Material
 
 
 class HelloWorldPanel(bpy.types.Panel):
@@ -215,7 +208,16 @@ class HelloWorldPanel(bpy.types.Panel):
 			row = box.row()
 			row.prop(sce,"Material_shadeless","Shadeless")
 			row.operator("viewport.set")
+#-------------------------------------------------------------------------------
+class Viewport(bpy.types.Operator):
+	bl_idname = "viewport.set"
+	bl_label = "Show textures"
 
+	def execute(self, context):
+
+		sce = context.scene
+		Material.create_textures(sce.Material_shadeless)
+		return {'FINISHED'}
 #-------------------------------------------------------------------------------
 def exposure(self, context):
 
@@ -234,18 +236,6 @@ def exposure(self, context):
 
 	CameraPhysical.f_number = round(scene.f_number,2)
 	#print ("self, context",self,context)
-
-#-------------------------------------------------------------------------------
-
-class Viewport(bpy.types.Operator):
-	bl_idname = "viewport.set"
-	bl_label = "Show textures"
-
-	def execute(self, context):
-
-		sce = context.scene
-		create_textures(sce.Material_shadeless)
-		return {'FINISHED'}
 #-------------------------------------------------------------------------------
 
 Engine1 = ["Irradiance", "", "Brute Force", "Light cache", "Spherical"]
@@ -256,7 +246,10 @@ Engine2 = ["None", "", "Brute Force", "Light cache"]
 
 
 def register():
-	bpy.utils.register_class(HelloWorldPanel)
+	bpy.utils.register_module(__name__)
+	
+	#bpy.utils.register_class(HelloWorldPanel)
+	#bpy.utils.register_class(Viewport)
 	bpy.types.Scene.GI = bpy.props.BoolProperty(default=True)
 	bpy.types.Scene.Engines = bpy.props.BoolProperty(default=True)
 	bpy.types.Scene.DMC = bpy.props.BoolProperty(default=True)
@@ -268,21 +261,29 @@ def register():
 
 	bpy.types.Scene.Material = bpy.props.BoolProperty(default=True)
 	bpy.types.Scene.Material_shadeless = bpy.props.BoolProperty(default=True)
-	bpy.utils.register_class(Viewport)
-	bpy.utils.register_class(ProxyMaterialList)
-	bpy.utils.register_class(ProxyMaterialLoad)
 	
-	bpy.types.VRAY_DP_tools.append(Vray_tools_panel)
 	bpy.types.Scene.proxy_load_path = bpy.props.StringProperty \
       (
       name = "Root Path",
       default = "",
       description = "Proxy file path",
       subtype = 'FILE_PATH')
-
+	  
+	#bpy.utils.register_class(ProxyMaterialSave)
+	#bpy.utils.register_class(ProxyMaterialLoad)
+	
+	bpy.types.VRAY_DP_tools.append(Material.Vray_tools_panel)
+	
+	  
+	
 
 def unregister():
-	bpy.utils.unregister_class(HelloWorldPanel)
+	
+	bpy.utils.unregister_module(__name__)
+	
+	#bpy.utils.unregister_class(HelloWorldPanel)
+	#bpy.utils.unregister_class(Viewport)
+	
 	del bpy.types.Scene.GI
 	del bpy.types.Scene.Engines
 	del bpy.types.Scene.DMC
@@ -294,11 +295,9 @@ def unregister():
 	del bpy.types.Scene.shutter_speed
 	del bpy.types.Scene.Material
 	del bpy.types.Scene.Material_shadeless
-	bpy.utils.unregister_class(Viewport)
-	bpy.utils.unregister_class(ProxyMaterialList)
-	bpy.utils.unregister_class(ProxyMaterialLoad)
-	bpy.types.VRAY_DP_tools.remove(Vray_tools_panel)
 	del bpy.types.Scene.proxy_load_path
+	bpy.types.VRAY_DP_tools.remove(Material.Vray_tools_panel)
+	
 	
 if __name__ == "__main__":
 	register()
