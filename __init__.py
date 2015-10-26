@@ -15,10 +15,13 @@ if "bpy" in locals():
 	if "Material" in locals():
 		imp.reload(Material)
 
+import sys
 import bpy
 from math import log
 from bpy.props import *
-from . import Material
+import sys, os
+import Vray_Render_Panel.Material
+
 
 
 class HelloWorldPanel(bpy.types.Panel):

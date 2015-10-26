@@ -90,7 +90,7 @@ class ProxyMaterialLoad(bpy.types.Operator):
 def outputnode_search(mat): #return node/None
 	
 	for node in mat.vray.ntree.nodes:
-		#print (i,node)
+		print (mat.name, node)
 		if node.bl_idname == 'VRayNodeOutputMaterial' and node.inputs[0].is_linked:
 			return node
 
@@ -148,7 +148,9 @@ def nodes_iterate(mat, node_type_search = False): #return image/nodeindex/None
 def create_textures(shadeless):
 	#print ("##################################")
 
-	for mat in bpy.data.materials:
+	#filter out materials without nodetree
+	materials = [m for m in bpy.data.materials if hasattr(m.vray.ntree, "name")]
+	for mat in materials:
 
 		image = nodes_iterate(mat)
 
