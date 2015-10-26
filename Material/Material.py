@@ -153,9 +153,12 @@ def create_textures(shadeless):
 	for mat in materials:
 
 		image = nodes_iterate(mat)
-
+		
+		#3d viewport 
 		mat.use_shadeless = shadeless
 		mat.use_nodes = False
+		mat.alpha = 0
+		print ("Set material alpha to 0")
 
 		#create image texture
 		#print ("image:",image)
