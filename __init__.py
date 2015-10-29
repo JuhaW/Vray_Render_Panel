@@ -12,15 +12,26 @@ bl_info = {
 
 if "bpy" in locals():
 	import imp
+
 	if "Material" in locals():
 		imp.reload(Material)
-else:		
+	if "RenderPass" in locals():
+		imp.reload(RenderPass)
+else:
 	import imp
 	import sys
 	import bpy
 	from math import log
 	from bpy.props import *
-	from . Material import Material
+	from .Material import Material
+	from .RenderPass import RenderPass as RP
+
+#
+from bpy.props import IntProperty, IntVectorProperty, StringProperty, BoolProperty, PointerProperty, BoolVectorProperty
+from bpy.types import PropertyGroup
+
+
+#
 
 
 class HelloWorldPanel(bpy.types.Panel):
@@ -40,7 +51,7 @@ class HelloWorldPanel(bpy.types.Panel):
 		row = layout.row()
 
 
-		#exposure()
+		# exposure()
 
 		# row.label("",icon="VRAY_LOGO")
 		row.prop(sce.vray.Exporter, "draft")
@@ -48,9 +59,9 @@ class HelloWorldPanel(bpy.types.Panel):
 		row = layout.row()
 		row.prop(sce.vray.SettingsOptions, "mtl_glossy", "Glossy")
 		row.prop(sce.vray.SettingsOptions, "mtl_reflectionRefraction", "Reflection")
-		row.prop(sce.vray.SettingsOptions,"mtl_doMaps","Textures")
+		row.prop(sce.vray.SettingsOptions, "mtl_doMaps", "Textures")
 		row = layout.row()
-		row.prop(sce.vray.SettingsOptions,"mtl_override_on","Material Override")
+		row.prop(sce.vray.SettingsOptions, "mtl_override_on", "Material Override")
 		if sce.vray.SettingsOptions.mtl_override_on:
 			row.prop_search(sce.vray.SettingsOptions, 'mtl_override', bpy.data, 'materials', text="")
 
@@ -159,7 +170,7 @@ class HelloWorldPanel(bpy.types.Panel):
 			# First column
 			col = split.column(align=True)
 			col.prop(sce.vray.SettingsImageSampler, "type")
-			# bpy.context.scene.vray.SettingsImageSampler.type = '0'
+		# bpy.context.scene.vray.SettingsImageSampler.type = '0'
 
 
 		# --------------------------------------------------------------------
@@ -173,12 +184,11 @@ class HelloWorldPanel(bpy.types.Panel):
 		row.prop(cam, "use", "Physical")
 		row.label(context.scene.camera.name)
 
-
 		if sce.Camera and cam.use:
 			row = box.row()
-			row.prop(sce,"Camera_Preserve_Exposure","Preserve Exposure")
+			row.prop(sce, "Camera_Preserve_Exposure", "Preserve Exposure")
 			row.prop(sce, "f_number")
-			#row.prop(sce,"f_number")
+			# row.prop(sce,"f_number")
 			row = box.row()
 			row.prop(cam, "shutter_speed")
 
@@ -190,14 +200,14 @@ class HelloWorldPanel(bpy.types.Panel):
 			row = box.row()
 
 
-			#row = layout.row()
-			#split = row.split()
-			#col = split.column(align=True)
-			#row.operator("exposure.get","Get F-number")
-			#row.operator("exposure.set","Set Shutter")
-			#row = box.row()
+			# row = layout.row()
+			# split = row.split()
+			# col = split.column(align=True)
+			# row.operator("exposure.get","Get F-number")
+			# row.operator("exposure.set","Set Shutter")
+			# row = box.row()
 			row.prop(cam, "ISO")
-			#
+		#
 		# --------------------------------------------------------------------
 		# Material
 		box = layout.box()
@@ -208,98 +218,135 @@ class HelloWorldPanel(bpy.types.Panel):
 
 		if sce.Material:
 			row = box.row()
-			row.prop(sce,"Material_shadeless","Shadeless")
+			row.prop(sce, "Material_shadeless", "Shadeless")
 			row.operator("viewport.set")
-#-------------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------------
 class Viewport(bpy.types.Operator):
 	bl_idname = "viewport.set"
 	bl_label = "Show textures"
 
 	def execute(self, context):
-
 		sce = context.scene
 		Material.create_textures(sce.Material_shadeless)
 		return {'FINISHED'}
-#-------------------------------------------------------------------------------
-def exposure(self, context):
 
+
+# -------------------------------------------------------------------------------
+def exposure(self, context):
 	scene = bpy.context.scene
-	CameraPhysical= scene.camera.data.vray.CameraPhysical
+	CameraPhysical = scene.camera.data.vray.CameraPhysical
 
 	if scene.Camera_Preserve_Exposure:
-
 		shutter = CameraPhysical.shutter_speed
 
 		ape1 = round(log(round(pow(CameraPhysical.f_number, 2), 2), 2), 1)
-		ape2 = round(log(round(pow(scene.f_number,2),2),2),1)
-		#print ("ape1",ape1)
-		#print ("ape2",ape2)
-		CameraPhysical.shutter_speed = round(shutter * (pow(2,ape1 - ape2)))
+		ape2 = round(log(round(pow(scene.f_number, 2), 2), 2), 1)
+		# print ("ape1",ape1)
+		# print ("ape2",ape2)
+		CameraPhysical.shutter_speed = round(shutter * (pow(2, ape1 - ape2)))
 
-	CameraPhysical.f_number = round(scene.f_number,2)
-	#print ("self, context",self,context)
-#-------------------------------------------------------------------------------
+	CameraPhysical.f_number = round(scene.f_number, 2)
+
+
+# print ("self, context",self,context)
+# -------------------------------------------------------------------------------
 
 Engine1 = ["Irradiance", "", "Brute Force", "Light cache", "Spherical"]
 Engine2 = ["None", "", "Brute Force", "Light cache"]
-#bpy.context.scene.f_number = bpy.props.FloatProperty(update = shutter_update)
 
-#-------------------------------------------------------------------------------
+
+# bpy.context.scene.f_number = bpy.props.FloatProperty(update = shutter_update)
+
+# -------------------------------------------------------------------------------
 
 
 def register():
 	bpy.utils.register_module(__name__)
-	
-	#bpy.utils.register_class(HelloWorldPanel)
-	#bpy.utils.register_class(Viewport)
+
+	# bpy.utils.register_class(HelloWorldPanel)
+	# bpy.utils.register_class(Viewport)
 	bpy.types.Scene.GI = bpy.props.BoolProperty(default=True)
 	bpy.types.Scene.Engines = bpy.props.BoolProperty(default=True)
 	bpy.types.Scene.DMC = bpy.props.BoolProperty(default=True)
 	bpy.types.Scene.Camera = bpy.props.BoolProperty(default=True)
 	bpy.types.Scene.Camera_Preserve_Exposure = bpy.props.BoolProperty(default=True)
 
-	bpy.types.Scene.shutter_speed = bpy.props.FloatProperty(name = "Shutter Speed", default=500.0, precision = 2,options={'HIDDEN'},subtype = 'NONE', unit = 'NONE')
-	bpy.types.Scene.f_number = bpy.props.FloatProperty(name = "Aperture", default=8.0, precision = 2, update=exposure)
+	bpy.types.Scene.shutter_speed = bpy.props.FloatProperty(name="Shutter Speed", default=500.0, precision=2,
+		options={'HIDDEN'}, subtype='NONE', unit='NONE')
+	bpy.types.Scene.f_number = bpy.props.FloatProperty(name="Aperture", default=8.0, precision=2, update=exposure)
 
 	bpy.types.Scene.Material = bpy.props.BoolProperty(default=True)
 	bpy.types.Scene.Material_shadeless = bpy.props.BoolProperty(default=True)
-	
+
 	bpy.types.Scene.proxy_load_path = bpy.props.StringProperty \
-      (
-      name = "Root Path",
-      default = "",
-      description = "Proxy file path",
-      subtype = 'FILE_PATH')
-	  
-	#bpy.utils.register_class(ProxyMaterialSave)
-	#bpy.utils.register_class(ProxyMaterialLoad)
-	
+			(
+			name="Root Path",
+			default="",
+			description="Proxy file path",
+			subtype='FILE_PATH'
+			)
+
+	# bpy.utils.register_class(ProxyMaterialSave)
+	# bpy.utils.register_class(ProxyMaterialLoad)
+
 	bpy.types.VRAY_DP_tools.append(Material.Vray_tools_panel)
-	
-	  
-	
+
+	bpy.types.Scene.RPass = BoolVectorProperty(size=len(RP.RenderChannelColor.ColorChannelNamesMenu),
+		update=RP.renderpass_bool)
+	bpy.types.Scene.RPassOther = BoolVectorProperty(size=len(RP.RPSettings.RPassOther), update=RP.renderpass_bool_other)
+	bpy.types.Scene.RPassCustom = IntVectorProperty(size=len(RP.RenderChannelColor.ColorChannelNamesMenu))
+	bpy.types.Scene.RPassSwitch = BoolProperty(default=False, update=RP.renderpass_onoff)
+
+
+# Renderpass
+# bpy.utils.register_class(RenderPassGroup)
+# bpy.utils.register_class(RP.RPSettings)
+# bpy.types.Scene.RPass = BoolVectorProperty(size=len(RP.RenderChannelColor.ColorChannelNamesMenu), update=RP.renderpass_bool)
+# bpy.types.Scene.RPassCustom = IntVectorProperty(size=len(RP.RenderChannelColor.ColorChannelNamesMenu))
+# bpy.types.Scene.RPassSwitch = BoolProperty(default=False, update=RP.renderpass_onoff)
+# bpy.types.Scene.r = bpy.props.PointerProperty(type=RP.RenderPassGroup)
+# bpy.utils.register_class(RP.RPSettings)
+# bpy.utils.register_class(RP.RenderPassPanel)
+# bpy.utils.register_class(RP.ClearPasses)
 
 def unregister():
-	
 	bpy.utils.unregister_module(__name__)
-	
-	#bpy.utils.unregister_class(HelloWorldPanel)
-	#bpy.utils.unregister_class(Viewport)
-	
+
+	# bpy.utils.unregister_class(HelloWorldPanel)
+	# bpy.utils.unregister_class(Viewport)
+
 	del bpy.types.Scene.GI
 	del bpy.types.Scene.Engines
 	del bpy.types.Scene.DMC
 	del bpy.types.Scene.Camera
 	del bpy.types.Scene.Camera_Preserve_Exposure
-	#del bpy.types.Scene.Cam_exposure
-	#del bpy.types.Scene.Cam_shutter_speed
-	#del bpy.types.Scene.f_number
+	# del bpy.types.Scene.Cam_exposure
+	# del bpy.types.Scene.Cam_shutter_speed
+	# del bpy.types.Scene.f_number
 	del bpy.types.Scene.shutter_speed
 	del bpy.types.Scene.Material
 	del bpy.types.Scene.Material_shadeless
 	del bpy.types.Scene.proxy_load_path
 	bpy.types.VRAY_DP_tools.remove(Material.Vray_tools_panel)
-	
-	
+
+	# Renderpass
+	# bpy.utils.unregister_class(RP.RenderPassGroup)
+	# del bpy.types.Scene.RPass
+	# del bpy.types.Scene.RPassCustom
+	# del bpy.types.Scene.RPassSwitch
+	# del bpy.types.Scene.RP
+
+	# bpy.utils.unregister_class(RP.RenderPassPanel)
+	# bpy.utils.unregister_class(RP.ClearPasses)
+	del bpy.types.Scene.RPass
+	del bpy.types.Scene.RPassCustom
+	del bpy.types.Scene.RPassSwitch
+
+
+# del bpy.types.Scene.RP
+# bpy.utils.unregister_class(RPSettings)
+
 if __name__ == "__main__":
 	register()
