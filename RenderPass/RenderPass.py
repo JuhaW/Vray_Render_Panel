@@ -3,6 +3,8 @@ from vb30.plugins import PLUGINS_ID
 from vb30.plugins.renderchannel import RenderChannelColor
 from bpy.props import IntProperty, IntVectorProperty, StringProperty, BoolProperty, PointerProperty, BoolVectorProperty
 from bpy.types import PropertyGroup
+from . import LightPass
+
 
 
 class RenderPassPanel(bpy.types.Panel):
@@ -22,7 +24,8 @@ class RenderPassPanel(bpy.types.Panel):
 		sce = context.scene
 		row = layout.row()
 		row.operator('clear.passes')
-		row.prop(scn, "RPassSwitch", text="On")
+		row.prop(scn, "RPassSwitch", text="Passes on")
+
 		row = layout.row()
 		row = layout.row()
 
@@ -41,6 +44,17 @@ class RenderPassPanel(bpy.types.Panel):
 
 		for i, passes in enumerate(RPSettings.RPassOther):
 			col.prop(scn, 'RPassOther', index=i, text=passes[0], toggle=False)
+
+		#LIGHT PASS
+
+		layout = self.layout
+		sce = context.scene
+		row = layout.row()
+		row.enabled = sce.RPassSwitch
+		row.operator("lightpass.add")
+		row.operator("lightpass.update")
+		#layout.template_list("SCENE_UL_list", "", sce.prop_group, "coll", sce.prop_group, "index","", sce.prop_group.index)
+		layout.template_list("SCENE_UL_list", "", sce.prop_group, "coll", sce.prop_group, "index","", sce.prop_group.index)
 
 class RPSettings():
 
@@ -74,12 +88,29 @@ def renderpass_onoff(self, context):
 	nodeout = scn.vray.ntree.nodes.get('Render Channles Container')
 	RenderPasses = RenderChannelColor.ColorChannelNamesMenu
 
+	#normal render passes
 	for i, passes in enumerate(RenderPasses):
 		if scn.RPassSwitch:
 			nodeout.inputs[RPSettings.RPassCustom[i]].use = scn.RPass[RPSettings.RPassCustom[i]]
 		else:
 			nodeout.inputs[i].use = False
 
+	#other render passes
+	for i, passes in enumerate(scn.RPassOther):
+		if scn.RPassSwitch:
+			nodeout.inputs[i+len(RenderPasses)].use = scn.RPassOther[i]
+		else:
+			nodeout.inputs[i+len(RenderPasses)].use = False
+
+	#Light passes
+	a = len(RenderPasses) + len(scn.RPassOther)
+	for i, passes in enumerate(scn.prop_group.coll):
+		if scn.RPassSwitch:
+			nodeout.inputs[i + a].use = True
+		else:
+			nodeout.inputs[i + a].use = False
+	print ("light passes:",len(scn.prop_group.coll))
+	print ("i:",i)
 
 def renderpass_bool(self, context):
 	scn = context.scene

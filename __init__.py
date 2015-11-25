@@ -20,13 +20,14 @@ if "bpy" in locals():
 else:
 	import imp
 	import sys
-	import bpy
-	from math import log
-	from bpy.props import *
-	from .Material import Material
-	from .RenderPass import RenderPass as RP
 
+	from . Material import Material
+	from . RenderPass import RenderPass as RP
+	from . RenderPass import LightPass as LP
 #
+import bpy
+from math import log
+from bpy.props import *
 from bpy.props import IntProperty, IntVectorProperty, StringProperty, BoolProperty, PointerProperty, BoolVectorProperty
 from bpy.types import PropertyGroup
 
@@ -249,16 +250,6 @@ def exposure(self, context):
 
 	CameraPhysical.f_number = round(scene.f_number, 2)
 
-
-# print ("self, context",self,context)
-# -------------------------------------------------------------------------------
-
-Engine1 = ["Irradiance", "", "Brute Force", "Light cache", "Spherical"]
-Engine2 = ["None", "", "Brute Force", "Light cache"]
-
-
-# bpy.context.scene.f_number = bpy.props.FloatProperty(update = shutter_update)
-
 # -------------------------------------------------------------------------------
 
 
@@ -299,6 +290,12 @@ def register():
 	bpy.types.Scene.RPassCustom = IntVectorProperty(size=len(RP.RenderChannelColor.ColorChannelNamesMenu))
 	bpy.types.Scene.RPassSwitch = BoolProperty(default=False, update=RP.renderpass_onoff)
 
+
+	#
+	bpy.types.Scene.prop_group = PointerProperty(type=LP.LPGroup)
+	#bpy.context.scene.prop_group.coll.clear()
+
+	#
 
 # Renderpass
 # bpy.utils.register_class(RenderPassGroup)
@@ -343,10 +340,19 @@ def unregister():
 	del bpy.types.Scene.RPass
 	del bpy.types.Scene.RPassCustom
 	del bpy.types.Scene.RPassSwitch
-
+	#
+	del bpy.types.Scene.prop_group
+	#
 
 # del bpy.types.Scene.RP
 # bpy.utils.unregister_class(RPSettings)
 
 if __name__ == "__main__":
 	register()
+
+
+Engine1 = ["Irradiance", "", "Brute Force", "Light cache", "Spherical"]
+Engine2 = ["None", "", "Brute Force", "Light cache"]
+
+# bpy.context.scene.f_number = bpy.props.FloatProperty(update = shutter_update)
+
